@@ -8,13 +8,16 @@ import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.Environment;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Locale;
 
@@ -51,34 +54,70 @@ public class BitmapView extends View {
     }
 
     private void getBitmapResource() {
-        bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.windmill);
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.windmill, options);
         String pictureInfo = String.format(Locale.getDefault(),
-                "图片尺寸：%d*%d，图片大小：%dkb",
-                bitmap.getWidth(), bitmap.getHeight(), bitmap.getByteCount());
+                "图片尺寸：%d*%d，图片大小：",
+                options.outWidth, options.outHeight);
         Log.d(TAG, pictureInfo);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try {
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 30, baos);
-            baos.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                baos.flush();
-                if (baos.size() != 0) {
+//        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+//        try {
+//            bitmap.compress(Bitmap.CompressFormat.JPEG, 50, baos);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        } finally {
+//            try {
+//                baos.flush();
+//                if (baos.size() != 0) {
 //                    BitmapFactory.Options options1 = new BitmapFactory.Options();
-                    Bitmap bitmap2 = BitmapFactory.decodeStream(new
-                            ByteArrayInputStream(baos.toByteArray()));
-                    pictureInfo = String.format(Locale.getDefault(),
-                            "图片尺寸：%d*%d，图片大小：%dkb",
-                            bitmap2.getWidth(), bitmap2.getHeight(), bitmap2.getByteCount());
-                    Log.d(TAG, pictureInfo);
-                }
-                baos.close();
+//                    Bitmap bitmap2 = BitmapFactory.decodeStream(new
+//                            ByteArrayInputStream(baos.toByteArray()), null, options1);
+//                    pictureInfo = String.format(Locale.getDefault(),
+//                            "图片尺寸：%d*%d，图片大小：%dkb",
+//                            options1.outWidth, options1.outHeight, bitmap2.getByteCount());
+//                    Log.d(TAG, pictureInfo);
+//
+//                    savePicture(baos);
+//                }
+//                baos.close();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+    }
+
+    private void savePicture(ByteArrayOutputStream baos) {
+        String dstFilePath = Environment.getExternalStorageDirectory().getAbsoluteFile() + File.separator +
+                "windmill.jpg";
+        Log.d(TAG, "路径: " + dstFilePath);
+        File dstFile = new File(dstFilePath);
+        if (!dstFile.exists()) {
+            try {
+                dstFile.createNewFile();
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            FileOutputStream fos = null;
+            try {
+                fos = new FileOutputStream(dstFile);
+                fos.write(baos.toByteArray());
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                if (fos != null) {
+                    try {
+                        fos.flush();
+                        fos.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
         }
+
     }
 
     private void drawableToBitmap() {
