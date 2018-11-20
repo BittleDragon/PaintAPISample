@@ -1,6 +1,7 @@
 package com.rxt.paintapidemo;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -12,8 +13,10 @@ import android.os.Environment;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -55,36 +58,44 @@ public class BitmapView extends View {
 
     private void getBitmapResource() {
         BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inJustDecodeBounds = true;
         bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.windmill, options);
-        String pictureInfo = String.format(Locale.getDefault(),
-                "图片尺寸：%d*%d，图片大小：",
-                options.outWidth, options.outHeight);
-        Log.d(TAG, pictureInfo);
-//        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-//        try {
-//            bitmap.compress(Bitmap.CompressFormat.JPEG, 50, baos);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        } finally {
-//            try {
-//                baos.flush();
-//                if (baos.size() != 0) {
-//                    BitmapFactory.Options options1 = new BitmapFactory.Options();
-//                    Bitmap bitmap2 = BitmapFactory.decodeStream(new
-//                            ByteArrayInputStream(baos.toByteArray()), null, options1);
-//                    pictureInfo = String.format(Locale.getDefault(),
-//                            "图片尺寸：%d*%d，图片大小：%dkb",
-//                            options1.outWidth, options1.outHeight, bitmap2.getByteCount());
-//                    Log.d(TAG, pictureInfo);
-//
-//                    savePicture(baos);
-//                }
-//                baos.close();
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
+        printPictureInfo(options);
+        Log.d(TAG, "图片大小：" + bitmap.getByteCount());
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try {
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 30, baos);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                baos.flush();
+                if (baos.size() != 0) {
+                    BitmapFactory.Options options1 = new BitmapFactory.Options();
+                    bitmap = BitmapFactory.decodeStream(new
+                            ByteArrayInputStream(baos.toByteArray()), null, options1);
+                    printPictureInfo(options1);
+                    Log.d(TAG, "图片大小：" + bitmap.getByteCount());
+                    savePicture(baos);
+                }
+                baos.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private Bitmap decodeResource(Resources resources, int id) {
+        TypedValue value = new TypedValue();
+        resources.openRawResource(id, value);
+        BitmapFactory.Options opts = new BitmapFactory.Options();
+        opts.inTargetDensity = value.density;
+        return BitmapFactory.decodeResource(resources, id, opts);
+    }
+
+    private void printPictureInfo(BitmapFactory.Options options) {
+        Log.d(TAG, String.format(Locale.getDefault(),
+                "图片尺寸：%d*%d",
+                options.outWidth, options.outHeight));
     }
 
     private void savePicture(ByteArrayOutputStream baos) {
@@ -92,32 +103,35 @@ public class BitmapView extends View {
                 "windmill.jpg";
         Log.d(TAG, "路径: " + dstFilePath);
         File dstFile = new File(dstFilePath);
-        if (!dstFile.exists()) {
-            try {
-                dstFile.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            FileOutputStream fos = null;
-            try {
-                fos = new FileOutputStream(dstFile);
-                fos.write(baos.toByteArray());
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                if (fos != null) {
-                    try {
-                        fos.flush();
-                        fos.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+        if (dstFile.exists()) {
+            dstFile.delete();
+        }
+        try {
+            dstFile.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(dstFile);
+            fos.write(baos.toByteArray());
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (fos != null) {
+                try {
+                    fos.flush();
+                    fos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
+                double fileSize = dstFile.length() / 1024d;
+                String format = String.format(Locale.getDefault(), "图片实际大小：%.2fkb", fileSize);
+                Log.d(TAG, format);
             }
         }
-
     }
 
     private void drawableToBitmap() {
