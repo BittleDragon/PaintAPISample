@@ -52,11 +52,12 @@ public class BitmapView extends View {
         paint = new Paint();
         paint.setAntiAlias(true);
 
-        getBitmapResource();
+        bitmap = decodeResource(getResources(), R.mipmap.windmill);
+//        bitmapSizeTest();
 //        drawableToBitmap();
     }
 
-    private void getBitmapResource() {
+    private void bitmapSizeTest() {
         BitmapFactory.Options options = new BitmapFactory.Options();
         bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.windmill, options);
         printPictureInfo(options);
